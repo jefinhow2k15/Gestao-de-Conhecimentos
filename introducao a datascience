@@ -1,0 +1,132 @@
+import pandas as pd
+import numpy as np
+# Create a series
+pd.Series(np.random.randn(5), index=['a', 'b', 'c', 'd', 'e'])
+
+# Preserve the series in variable s for later access
+s = pd.Series(np.random.randn(5), index=['a', 'b', 'c', 'd', 'e'])
+print(s)
+# Index
+print (s[0])
+print("\n")
+print (s[:3])
+# Create a dataframe
+df = pd.DataFrame(s, columns = ['Coluna 1'])
+df
+
+# Can access columns by name
+df['Coluna 1']
+
+# Easy to add columns
+df['Coluna 2'] = df['Coluna 1'] * 4
+df
+# Other manipulation, like sorting -- if you want to preserve, set equal to a var
+df.sort_values(by = 'Coluna 2')
+
+df[df['Coluna 2'] <= 2]
+df.apply(lambda x: min(x) + max(x))
+np.mean(df)
+
+table = df.describe()
+table
+import matplotlib.pyplot as plt
+% matplotlib inline
+plt.style.use('ggplot')
+
+#@title Default title text
+# Read in data into a dataframe
+df = pd.read_csv('https://raw.githubusercontent.com/salgado/lasalle.sad.repo.datas/master/GlobalTemperatures.csv')
+
+# Show the first 5 rows of the table
+df.head(10)
+
+# Let's just consider the LandAverageTemperature
+# "A primarily label-location based indexer"
+df = df.ix[:,:2]
+df.head(10)
+df.describe()
+
+# Cursory plot
+plt.figure(figsize = (15, 5))
+plt.scatter(x = df['LandAverageTemperature'].index, y = df['LandAverageTemperature'])
+plt.title("Temperatura Média da Terra (1750-2015)")
+plt.xlabel("Ano")
+plt.ylabel("Temperatura media da Terra")
+
+# Cursory plot
+plt.figure(figsize = (15, 5))
+plt.scatter(x = df['LandAverageTemperature'].index, y = df['LandAverageTemperature'])
+plt.title("Temperatura Média da Terra (1750-2015)")
+plt.xlabel("Ano")
+plt.ylabel("Temperatura media da Terra")
+plt.show()
+
+# Maybe we can try only by year?
+# But notice that the dt column is made up of strings
+print(type(df['dt'][0]))
+
+# Convert to datetime object
+times = pd.DatetimeIndex(df['dt'])
+
+# Group by year
+grouped = df.groupby([times.year]).mean()
+
+# Plot
+plt.figure(figsize = (15, 5))
+plt.plot(grouped['LandAverageTemperature'])
+
+# Change features of the graph
+plt.title("Media da temperatura da Terra 1750-2015")
+plt.xlabel("Year")
+plt.ylabel("Yearly Average Land Temperature")
+plt.show()
+
+# What caused those anomalies?
+grouped.head()
+
+# Check what happened in 1752
+df[times.year == 1752]
+
+# There are a lot of null values! What else?
+df[np.isnan(df['LandAverageTemperature'])]
+
+# Use previous valid observation to fill gap
+df['LandAverageTemperature'] = df['LandAverageTemperature'].fillna(method='ffill')
+
+# Regroup and plot
+grouped = df.groupby([times.year]).mean()
+
+# Better, but still not perfect
+# What are some other ways to fill the NaN values?
+plt.figure(figsize = (15, 5))
+plt.plot(grouped['LandAverageTemperature'])
+plt.show()
+
+# Let's model!
+from sklearn.linear_model import LinearRegression as LinReg
+x = grouped.index.values.reshape(-1, 1)
+y = grouped['LandAverageTemperature'].values
+reg = LinReg()
+reg.fit(x, y)
+y_preds = reg.predict(x)
+print("Accuracy: " + str(reg.score(x, y)))
+plt.figure(figsize = (15, 5))
+plt.title("Linear Regression")
+plt.scatter(x = x, y = y_preds)
+plt.scatter(x = x, y = y, c = "b")
+reg.predict(2000)
+
+# Let's model!
+from sklearn.linear_model import LinearRegression as LinReg
+x = grouped.index.values.reshape(-1, 1)
+y = grouped['LandAverageTemperature'].values
+reg = LinReg()
+reg.fit(x, y)
+y_preds = reg.predict(x)
+
+print("Accuracy: " + str(reg.score(x, y)))
+plt.figure(figsize = (15, 5))
+plt.title("Linear Regression")
+plt.scatter(x = x, y = y_preds)
+plt.scatter(x = x, y = y, c = "b")
+reg.predict(2000)
